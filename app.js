@@ -302,7 +302,7 @@ const session = client.startSession()
 //Note: Each individual operation must be awaited and have the session passed in as an argument
 const main = async () => {
     try {
-        const transactionResult = await session.withTransaction( async () => {
+        const transactionResults = await session.withTransaction( async () => {
             // step 1: update the account sender balance
             const updateSenderResults = await accounts.updateOne(
                 { account_id: account_id_sender },
@@ -356,10 +356,23 @@ const main = async () => {
                 `${updateReceiverTransferResults.matchedCount} document(s) matched in the transfers collection, updated ${updateReceiverTransferResults.modifiedCount}`
             )
         })
+
+        console.log('Commiting trasaction ...')
+
+        // If the callback for withTransaction returns succesfully without throwing an error, the trasaction will be committed
+        if (transactionResults) {
+            console.log('The reservation was succesfully created.')
+        }else {
+            console.log('The transaction was intentionally aborted.')
+        }
         
     }catch(err) {
-
+        console.error(`Transaction aborted: ${err}`)
+        process.exit(1)
     }finally {
-
+        await session.endSession()
+        await client.close()
     }
 }
+
+main()
